@@ -6,7 +6,7 @@
         <relationship name="pictures" toMany="YES" deletionRule="Cascade" ordered="YES" destinationEntity="Picture" inverseName="locations" inverseEntity="Picture" syncable="YES"/>
     </entity>
     <entity name="Picture" representedClassName=".Pictures" syncable="YES">
-        <attribute name="id" optional="YES" attributeType="Integer 64" defaultValueString="0" syncable="YES"/>
+        <attribute name="id" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="url" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="locations" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Location" inverseName="pictures" inverseEntity="Location" syncable="YES"/>
     </entity>

@@ -94,20 +94,20 @@ class Flickr {
                     displayError("No photos were found. search again.")
                     return
                 } else {
-                    
-                    guard let imageURLString = photosDictionary[Constants.FlickrResponseKeys.MediumURL] as? String else {
-                        displayError("Problem with URL")
-                        return
+                    print(photosDictionary)
+                    for photo in photoArray {
+                        guard let imageURLString = photo[Constants.FlickrResponseKeys.MediumURL] as? String else {
+                            displayError("Problem with URL")
+                            return
+                        }
+                        let imageURL = NSURL(string:imageURLString)
+                        if let imageData = NSData(contentsOfURL: imageURL!) {
+                            
+                            // FlickrImageCell.image.image = UIImage(data: imageData)
+                        } else {
+                            displayError("Image does not exist.")
+                        }
                     }
-                    
-                    let imageURL = NSURL(string:imageURLString)
-                    if let imageData = NSData(contentsOfURL: imageURL!) {
-                        
-                        // FlickrImageCell.image.image = UIImage(data: imageData)
-                    } else {
-                        displayError("Image does not exist.")
-                    }
-                    
                 }
             }
         }

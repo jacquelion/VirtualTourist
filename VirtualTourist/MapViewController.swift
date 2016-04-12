@@ -19,17 +19,21 @@ class MapViewController: UIViewController {
     var longitude : Double = 0.0
     var latitude : Double = 0.0
     
+    var editingMap : Bool = false
+    
     var locations = [Location]()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         deleteLabel.hidden = true
+        
         restoreMapRegion(true)
         self.mapView.delegate = self
         
         //enable long press to drop a pin
-        let uilgr = UILongPressGestureRecognizer(target: self, action: "addAnnotation:")
+        let uilgr = UILongPressGestureRecognizer(target: self, action: #selector(MapViewController.addAnnotation(_:)))
         uilgr.minimumPressDuration = 1.3
         mapView.addGestureRecognizer(uilgr)
         
@@ -39,7 +43,12 @@ class MapViewController: UIViewController {
     override func viewWillAppear(animated: Bool) {
         //Core Data: get all previously placed pins
         locations = fetchAllLocations()
-        print(locations)
+        print("Locations: ", locations)
+        for i in locations{
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = CLLocationCoordinate2D(latitude: i.latitude, longitude: i.longitude)
+            mapView.addAnnotation(annotation)
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -61,8 +70,20 @@ class MapViewController: UIViewController {
             print("Error in fetchAllLocations(): \(error)")
             return [Location]()
         }
+        
     }
 
+    //TODO: Fix This
+    func setupNavBar(){
+        if editingMap == true {
+            self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Done", style: .Plain, target: self, action: #selector(MapViewController.toggleEdit))
+            deleteLabel.hidden = false
+        } else {
+            self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Edit", style: .Plain, target: self, action: #selector(MapViewController.toggleEdit))
+            deleteLabel.hidden = true
+        }
+    }
+    
     @IBAction func beginEdit(sender: AnyObject) {
         if deleteLabel.hidden == false {
             deleteLabel.hidden = true
@@ -72,6 +93,10 @@ class MapViewController: UIViewController {
             editButton.title = "Done"
         }
         //TODO: Shift view up, fix ui
+    }
+    
+    func toggleEdit(){
+        editingMap != editingMap
     }
 
     // MARK: - Save the zoom level helpers
@@ -172,14 +197,9 @@ extension MapViewController : MKMapViewDelegate {
         vc.longitudeDelta = self.mapView.region.span.longitudeDelta
         
         self.presentViewController(vc, animated: true, completion: nil)
+        
+        //TODO: If editingMap = true, remove annotation
     }
-    
-//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-//        if (segue.identifier=="showAlbum") {
-//            let vc = segue.destinationViewController as! AlbumViewController
-//           
-//        }
-//    }
     
 }
 

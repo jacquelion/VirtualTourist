@@ -19,6 +19,7 @@ class Picture : NSManagedObject {
         static let url = "url_m"
     }
     
+    
     @NSManaged var url: String
     @NSManaged var location: Location
     
