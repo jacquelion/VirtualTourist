@@ -30,13 +30,6 @@
                                 <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3Ds-CO-7my">
-                                <rect key="frame" x="252" y="487" width="98" height="30"/>
-                                <state key="normal" title="Test Flickr API"/>
-                                <connections>
-                                    <action selector="testFlickr:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Ipe-zC-CGa"/>
-                                </connections>
-                            </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
@@ -49,6 +42,11 @@
                             <constraint firstAttribute="trailing" secondItem="10S-0v-qYY" secondAttribute="trailing" id="qf8-xL-dPn"/>
                             <constraint firstItem="10S-0v-qYY" firstAttribute="leading" secondItem="OpO-xP-lSF" secondAttribute="leading" id="zOL-e4-dQI"/>
                         </constraints>
+                        <variation key="default">
+                            <mask key="constraints">
+                                <exclude reference="47Y-DY-qN9"/>
+                            </mask>
+                        </variation>
                     </view>
                     <navigationItem key="navigationItem" title="Virtual Tourist" id="pxl-cB-UrO">
                         <barButtonItem key="rightBarButtonItem" systemItem="edit" id="txX-ID-tfn">
@@ -61,6 +59,7 @@
                         <outlet property="deleteLabel" destination="OpO-xP-lSF" id="9Rn-hV-Mkf"/>
                         <outlet property="editButton" destination="txX-ID-tfn" id="7QA-3G-JaA"/>
                         <outlet property="mapView" destination="10S-0v-qYY" id="V4Y-CW-1fE"/>
+                        <segue destination="Xgz-ZA-HKP" kind="showDetail" identifier="showAlbum" id="bgV-zU-FEV"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -70,7 +69,7 @@
         <!--AlbumViewController-->
         <scene sceneID="O7k-CV-LnG">
             <objects>
-                <viewController storyboardIdentifier="AlbumViewController" id="Xgz-ZA-HKP" userLabel="AlbumViewController" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="AlbumViewController" id="Xgz-ZA-HKP" userLabel="AlbumViewController" customClass="AlbumViewController" customModule="VirtualTourist" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="2c2-w5-YmQ"/>
                         <viewControllerLayoutGuide type="bottom" id="sNf-eF-vIe"/>
@@ -88,14 +87,28 @@
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="DJU-sL-4u8">
+                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="FlickrImageCell" id="DJU-sL-4u8" customClass="FlickrImageCell" customModule="VirtualTourist" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
                                             <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
                                             <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="n0S-hz-GCv">
+                                                    <rect key="frame" x="1" y="0.0" width="49" height="50"/>
+                                                </imageView>
+                                            </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                         </view>
+                                        <constraints>
+                                            <constraint firstItem="n0S-hz-GCv" firstAttribute="centerX" secondItem="DJU-sL-4u8" secondAttribute="centerX" id="Lok-kJ-05u"/>
+                                            <constraint firstAttribute="trailing" secondItem="n0S-hz-GCv" secondAttribute="trailing" id="MZy-VJ-g1O"/>
+                                            <constraint firstItem="n0S-hz-GCv" firstAttribute="top" secondItem="DJU-sL-4u8" secondAttribute="top" id="jA0-lP-D4d"/>
+                                            <constraint firstAttribute="bottom" secondItem="n0S-hz-GCv" secondAttribute="bottom" id="xWu-W5-rAD"/>
+                                        </constraints>
+                                        <connections>
+                                            <outlet property="image" destination="n0S-hz-GCv" id="Gev-Qy-JNU"/>
+                                        </connections>
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
@@ -103,7 +116,11 @@
                                 <rect key="frame" x="0.0" y="0.0" width="600" height="44"/>
                                 <items>
                                     <navigationItem id="T0G-oq-V93">
-                                        <barButtonItem key="leftBarButtonItem" systemItem="done" id="EBv-nx-PE4"/>
+                                        <barButtonItem key="leftBarButtonItem" systemItem="done" id="EBv-nx-PE4">
+                                            <connections>
+                                                <action selector="done:" destination="Xgz-ZA-HKP" id="3ce-OZ-Wwf"/>
+                                            </connections>
+                                        </barButtonItem>
                                     </navigationItem>
                                 </items>
                             </navigationBar>
@@ -128,6 +145,9 @@
                             <constraint firstItem="B3U-qG-MkS" firstAttribute="bottom" secondItem="sNf-eF-vIe" secondAttribute="top" id="xba-96-J9h"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="mapView" destination="Mvl-EH-L1D" id="vNm-AO-2t5"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="w9B-zW-5oJ" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>

@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class MapViewController: UIViewController {
 
@@ -18,10 +19,8 @@ class MapViewController: UIViewController {
     var longitude : Double = 0.0
     var latitude : Double = 0.0
     
-    @IBAction func testFlickr(sender: AnyObject) {
-        searchByLatLon(latitude, longitude: longitude, sender: self)
-        
-    }
+    var locations = [Location]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -33,11 +32,35 @@ class MapViewController: UIViewController {
         let uilgr = UILongPressGestureRecognizer(target: self, action: "addAnnotation:")
         uilgr.minimumPressDuration = 1.3
         mapView.addGestureRecognizer(uilgr)
+        
+        
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        //Core Data: get all previously placed pins
+        locations = fetchAllLocations()
+        print(locations)
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    //MARK: - Core Data Convenience.
+    var sharedContext: NSManagedObjectContext {
+        return CoreDataStackManager.sharedInstance().managedObjectContext
+    }
+    
+    func fetchAllLocations() -> [Location] {
+        let fetchRequest = NSFetchRequest(entityName: "Location")
+        do {
+            print("Fetch Request: \(fetchRequest)")
+            return try sharedContext.executeFetchRequest(fetchRequest) as! [Location]
+        } catch let error as NSError {
+            print("Error in fetchAllLocations(): \(error)")
+            return [Location]()
+        }
     }
 
     @IBAction func beginEdit(sender: AnyObject) {
@@ -53,7 +76,6 @@ class MapViewController: UIViewController {
 
     // MARK: - Save the zoom level helpers
     
-    // Here we use the same filePath strategy as the Persistent Master Detail
     // A convenient property
     var filePath : String {
         let manager = NSFileManager.defaultManager()
@@ -102,130 +124,27 @@ class MapViewController: UIViewController {
     
     //MARK: -Drop A Pin Functions
     func addAnnotation(gestureRecognizer:UIGestureRecognizer){
-        var touchPoint = gestureRecognizer.locationInView(mapView)
-        var newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
+        let touchPoint = gestureRecognizer.locationInView(mapView)
+        let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
         latitude = Double(newCoordinates.latitude)
         longitude = Double(newCoordinates.longitude)
         print("Longitude: ", longitude, ", Latitude: ", latitude)
         let annotation = MKPointAnnotation()
         annotation.coordinate = newCoordinates
         mapView.addAnnotation(annotation)
-    }
-    
-    //FLICKR API
-    
-    private func searchByLatLon(latitude: Double, longitude: Double, sender: AnyObject) {
         
+        //TODO: ADD PERSISTENCE
+        //CORE DATA
+        var dictionary = [String : AnyObject]()
         
-        // TODO: Set necessary parameters!
-        print("Started search by lat/lon")
-        
-        let methodParameters: [String: String!] = [
-            Constants.FlickrParameterKeys.SafeSearch : Constants.FlickrParameterValues.UseSafeSearch,
-            Constants.FlickrParameterKeys.BoundingBox : bboxString(latitude, longitude: longitude),
-            Constants.FlickrParameterKeys.Extras : Constants.FlickrParameterValues.MediumURL,
-            Constants.FlickrParameterKeys.APIKey : Constants.FlickrParameterValues.APIKey,
-            Constants.FlickrParameterKeys.Method : Constants.FlickrParameterValues.SearchMethod,
-            Constants.FlickrParameterKeys.NoJSONCallback : Constants.FlickrParameterValues.DisableJSONCallback,
-            Constants.FlickrParameterKeys.Format : Constants.FlickrParameterValues.ResponseFormat
-        ]
-        displayImageFromFlickrBySearch(methodParameters)
-        
-        
-    }
-    
-    private func bboxString(latitude: Double, longitude: Double) -> String {
-        let minimumLon = max(longitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.0)
-        let minimumLat = max(latitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.0)
-        let maximumLon = min(longitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.1)
-        let maximumLat = min(latitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.1)
+        dictionary[Location.Keys.Latitude] = latitude
+        dictionary[Location.Keys.Longitude] = longitude
 
-        print("\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)")
-
-        return "\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)"
+        let locationToBeAdded = Location(dictionary: dictionary, context: sharedContext)
+        
+        self.locations.append(locationToBeAdded)
+        CoreDataStackManager.sharedInstance().saveContext()
     }
-    
-    // MARK: Flickr API
-    
-    private func displayImageFromFlickrBySearch(methodParameters: [String:AnyObject]) {
-        print("started Display Image From Flickr By Search.")
-        
-        let session = NSURLSession.sharedSession()
-        let request = NSURLRequest(URL: flickrURLFromParameters(methodParameters))
-        
-        let task = session.dataTaskWithRequest(request) { (data, response, error) in
-            
-            func displayError(error:String) {
-                print(error)
-                //TODO: performUIUpdatesOnMain{
-                //                    self.setUIEnabled(true)
-                //                    self.photoTitleLabel.text = "No photo returned. Try again"
-                //                    self.photoImageView.image = nil
-                //                }
-            }
-            
-            guard (error == nil) else {
-                displayError("There was an error with your request: \(error)")
-                return
-            }
-            
-            guard let statusCode = (response as? NSHTTPURLResponse)?.statusCode where
-                statusCode >= 200 && statusCode <= 299 else {
-                    displayError("Your request returned a status code other than 2xx!")
-                    return
-            }
-            
-            guard let data = data else {
-                displayError("No data was returned by the request.")
-                return
-            }
-            
-            let parsedResult: AnyObject!
-            do {
-                parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
-                print("Parsed Result: ", parsedResult)
-            } catch {
-                displayError("Could not parse the data as JSON: \(data)")
-                return
-            }
-            
-            if let photosDictionary = parsedResult[Constants.FlickrResponseKeys.Photos] as? [String: AnyObject], photoArray = photosDictionary[Constants.FlickrResponseKeys.Photo] as? [[String:AnyObject]] {
-                
-                guard let totalPages = photosDictionary[Constants.FlickrResponseKeys.Pages] as? Int else {
-                    displayError("Cannot find key \(Constants.FlickrResponseKeys.Pages)")
-                    return
-                }
-                let pageLimit = min(totalPages, 40)
-                let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
-                //
-                //                self.displayImageFromFlickrBySearch(methodParameters, withPageNumber: randomPage)
-                //                print(randomPage)
-            }
-        }
-        
-        task.resume()
-    }
-    
-    
-    
-    // MARK: Helper for Creating a URL from Parameters
-    
-    private func flickrURLFromParameters(parameters: [String:AnyObject]) -> NSURL {
-        
-        let components = NSURLComponents()
-        components.scheme = Constants.Flickr.APIScheme
-        components.host = Constants.Flickr.APIHost
-        components.path = Constants.Flickr.APIPath
-        components.queryItems = [NSURLQueryItem]()
-        
-        for (key, value) in parameters {
-            let queryItem = NSURLQueryItem(name: key, value: "\(value)")
-            components.queryItems!.append(queryItem)
-        }
-        
-        return components.URL!
-    }
-
 }
 
 /**
@@ -239,6 +158,29 @@ extension MapViewController : MKMapViewDelegate {
     func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         saveMapRegion()
     }
+    
+    //MARK: -Segue in response to touch
+    
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView){
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+
+        let vc = storyboard.instantiateViewControllerWithIdentifier("AlbumViewController") as! AlbumViewController
+        
+        vc.latitude = (view.annotation?.coordinate.latitude)!
+        vc.longitude = (view.annotation?.coordinate.longitude)!
+        vc.latitudeDelta = self.mapView.region.span.latitudeDelta
+        vc.longitudeDelta = self.mapView.region.span.longitudeDelta
+        
+        self.presentViewController(vc, animated: true, completion: nil)
+    }
+    
+//    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+//        if (segue.identifier=="showAlbum") {
+//            let vc = segue.destinationViewController as! AlbumViewController
+//           
+//        }
+//    }
+    
 }
 
 
