@@ -6,43 +6,45 @@
 //  Copyright © 2016 Jacqueline Sloves. All rights reserved.
 //
 
+import UIKit
 import Foundation
 
-class Flickr : NSObject {
+class Flickr {
     
-    private func searchByLatLon(latitude: Double, longitude: Double, sender: AnyObject) {
+    private init() {
+    
+    }
+    
+    //MARK: FLICKR API
+    func loadFlickrPictures(latitude: Double, longitude: Double) {
+        // TODO: Set necessary parameters!
+        print("Started search by lat/lon")
         
-
-            // TODO: Set necessary parameters!
-            
-            
-            let methodParameters: [String: String!] = [
-                Constants.FlickrParameterKeys.SafeSearch : Constants.FlickrParameterValues.UseSafeSearch,
-                Constants.FlickrParameterKeys.BoundingBox : bboxString(latitude, longitude: longitude),
-                Constants.FlickrParameterKeys.Extras : Constants.FlickrParameterValues.MediumURL,
-                Constants.FlickrParameterKeys.APIKey : Constants.FlickrParameterValues.APIKey,
-                Constants.FlickrParameterKeys.Method : Constants.FlickrParameterValues.SearchMethod,
-                Constants.FlickrParameterKeys.NoJSONCallback : Constants.FlickrParameterValues.DisableJSONCallback,
-                Constants.FlickrParameterKeys.Format : Constants.FlickrParameterValues.ResponseFormat
-            ]
-        displayImageFromFlickrBySearch(methodParameters)
-
-       
+        let methodParameters: [String: String!] = [
+            Constants.FlickrParameterKeys.SafeSearch : Constants.FlickrParameterValues.UseSafeSearch,
+            Constants.FlickrParameterKeys.BoundingBox : self.bboxString(latitude, longitude: longitude),
+            Constants.FlickrParameterKeys.Extras : Constants.FlickrParameterValues.MediumURL,
+            Constants.FlickrParameterKeys.APIKey : Constants.FlickrParameterValues.APIKey,
+            Constants.FlickrParameterKeys.Method : Constants.FlickrParameterValues.SearchMethod,
+            Constants.FlickrParameterKeys.NoJSONCallback : Constants.FlickrParameterValues.DisableJSONCallback,
+            Constants.FlickrParameterKeys.Format : Constants.FlickrParameterValues.ResponseFormat
+        ]
+        self.displayImageFromFlickrBySearch(methodParameters)
     }
     
     private func bboxString(latitude: Double, longitude: Double) -> String {
-            let minimumLon = max(longitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.0)
-            let minimumLat = max(latitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.0)
-            let maximumLon = min(longitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.1)
-            let maximumLat = min(latitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.1)
-            
-            return "\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)"
-            
+        let minimumLon = max(longitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.0)
+        let minimumLat = max(latitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.0)
+        let maximumLon = min(longitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.1)
+        let maximumLat = min(latitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.1)
+        
+        print("\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)")
+        
+        return "\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)"
     }
     
-    // MARK: Flickr API
-    
     private func displayImageFromFlickrBySearch(methodParameters: [String:AnyObject]) {
+        print("started Display Image From Flickr By Search.")
         
         let session = NSURLSession.sharedSession()
         let request = NSURLRequest(URL: flickrURLFromParameters(methodParameters))
@@ -51,11 +53,7 @@ class Flickr : NSObject {
             
             func displayError(error:String) {
                 print(error)
-                //TODO: performUIUpdatesOnMain{
-//                    self.setUIEnabled(true)
-//                    self.photoTitleLabel.text = "No photo returned. Try again"
-//                    self.photoImageView.image = nil
-//                }
+                //TODO: performUIUpdatesOnMain
             }
             
             guard (error == nil) else {
@@ -77,6 +75,7 @@ class Flickr : NSObject {
             let parsedResult: AnyObject!
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: .AllowFragments)
+                print("Parsed Result: ", parsedResult)
             } catch {
                 displayError("Could not parse the data as JSON: \(data)")
                 return
@@ -90,17 +89,34 @@ class Flickr : NSObject {
                 }
                 let pageLimit = min(totalPages, 40)
                 let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
-//                
-//                self.displayImageFromFlickrBySearch(methodParameters, withPageNumber: randomPage)
-//                print(randomPage)
+                
+                if photoArray.count == 0 {
+                    displayError("No photos were found. search again.")
+                    return
+                } else {
+                    
+                    guard let imageURLString = photosDictionary[Constants.FlickrResponseKeys.MediumURL] as? String else {
+                        displayError("Problem with URL")
+                        return
+                    }
+                    
+                    let imageURL = NSURL(string:imageURLString)
+                    if let imageData = NSData(contentsOfURL: imageURL!) {
+                        
+                        // FlickrImageCell.image.image = UIImage(data: imageData)
+                    } else {
+                        displayError("Image does not exist.")
+                    }
+                    
+                }
             }
         }
         
         task.resume()
     }
-
-
-
+    
+    
+    
     // MARK: Helper for Creating a URL from Parameters
     
     private func flickrURLFromParameters(parameters: [String:AnyObject]) -> NSURL {
@@ -119,5 +135,7 @@ class Flickr : NSObject {
         return components.URL!
     }
 
+    //MARK: -Shared Instance (Singleton)
+    static let sharedInstance = Flickr()
 
 }
