@@ -37,22 +37,15 @@ class Picture : NSManagedObject {
         url = dictionary[Keys.url] as! String
         
     }
+    
+    var pictureImage: UIImage? {
+        
+        get {
+            return Flickr.Caches.imageCache.imageWithIdentifier(url)
+        }
+        
+        set {
+            Flickr.Caches.imageCache.storeImage(newValue, withIdentifier: url)
+        }
+    }
 }
-
-
-
-//Example Response:
-//{
-//farm = 2;
-//"height_m" = 500;
-//id = 26380583625;
-//isfamily = 0;
-//isfriend = 0;
-//ispublic = 1;
-//owner = "94651762@N04";
-//secret = c436635e12;
-//server = 1543;
-//title = "Pier39 #pier39 #pier #flag #seagull #flags #sf #sfo #sanfrancisco #carlifornia #usa";
-//"url_m" = "https://farm2.staticflickr.com/1543/26380583625_c436635e12.jpg";
-//"width_m" = 400;
-//}
