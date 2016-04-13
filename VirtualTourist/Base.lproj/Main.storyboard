@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15D21" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="4Pk-SU-ewN">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="4Pk-SU-ewN">
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
@@ -30,10 +30,15 @@
                                 <color key="textColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="0a3-Cr-G1p">
+                                <rect key="frame" x="290" y="322" width="20" height="20"/>
+                            </activityIndicatorView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstItem="0a3-Cr-G1p" firstAttribute="centerY" secondItem="10S-0v-qYY" secondAttribute="centerY" id="3rk-w3-s8Q"/>
                             <constraint firstItem="OpO-xP-lSF" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="487" id="47Y-DY-qN9"/>
+                            <constraint firstItem="0a3-Cr-G1p" firstAttribute="centerX" secondItem="10S-0v-qYY" secondAttribute="centerX" id="8oP-2S-ZF0"/>
                             <constraint firstItem="10S-0v-qYY" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="Nzk-bG-sfe"/>
                             <constraint firstItem="10S-0v-qYY" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" id="a26-A4-h4n"/>
                             <constraint firstItem="10S-0v-qYY" firstAttribute="bottom" secondItem="wfy-db-euE" secondAttribute="top" id="g7V-LM-KbK"/>
@@ -48,10 +53,18 @@
                             </mask>
                         </variation>
                     </view>
-                    <navigationItem key="navigationItem" title="Virtual Tourist" id="pxl-cB-UrO"/>
+                    <navigationItem key="navigationItem" title="Virtual Tourist" id="pxl-cB-UrO">
+                        <barButtonItem key="rightBarButtonItem" title="Edit" id="PoB-CM-fKH">
+                            <connections>
+                                <action selector="beginEdit:" destination="BYZ-38-t0r" id="6qA-Dd-fRt"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <connections>
                         <outlet property="deleteLabel" destination="OpO-xP-lSF" id="9Rn-hV-Mkf"/>
+                        <outlet property="editButton" destination="PoB-CM-fKH" id="1yq-rl-oNd"/>
                         <outlet property="mapView" destination="10S-0v-qYY" id="V4Y-CW-1fE"/>
+                        <outlet property="mySpinner" destination="0a3-Cr-G1p" id="JwA-kd-r0d"/>
                         <segue destination="Xgz-ZA-HKP" kind="showDetail" identifier="showAlbum" id="bgV-zU-FEV"/>
                     </connections>
                 </viewController>

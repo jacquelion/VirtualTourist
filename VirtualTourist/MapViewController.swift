@@ -11,10 +11,11 @@ import MapKit
 import CoreData
 
 class MapViewController: UIViewController {
-
+    
     @IBOutlet weak var deleteLabel: UILabel!
     @IBOutlet weak var editButton: UIBarButtonItem!
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var mySpinner: UIActivityIndicatorView!
     
     var longitude : Double = 0.0
     var latitude : Double = 0.0
@@ -37,7 +38,8 @@ class MapViewController: UIViewController {
         uilgr.minimumPressDuration = 1.3
         mapView.addGestureRecognizer(uilgr)
         
-        
+        mySpinner.startAnimating()
+        view.alpha = 0.5
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -50,7 +52,7 @@ class MapViewController: UIViewController {
             mapView.addAnnotation(annotation)
         }
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -72,33 +74,22 @@ class MapViewController: UIViewController {
         }
         
     }
-
-    //TODO: Fix This
-    func setupNavBar(){
-        if editingMap == true {
-            self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Done", style: .Plain, target: self, action: #selector(MapViewController.toggleEdit))
-            deleteLabel.hidden = false
-        } else {
-            self.navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Edit", style: .Plain, target: self, action: #selector(MapViewController.toggleEdit))
-            deleteLabel.hidden = true
-        }
-    }
     
     @IBAction func beginEdit(sender: AnyObject) {
         if deleteLabel.hidden == false {
             deleteLabel.hidden = true
             editButton.title = "Edit"
+            editingMap = false
+            view.alpha = 1.0
         } else {
             deleteLabel.hidden = false
             editButton.title = "Done"
+            editingMap = true
+            view.alpha = 0.5
         }
         //TODO: Shift view up, fix ui
     }
     
-    func toggleEdit(){
-        editingMap != editingMap
-    }
-
     // MARK: - Save the zoom level helpers
     
     // A convenient property
@@ -149,26 +140,27 @@ class MapViewController: UIViewController {
     
     //MARK: -Drop A Pin Functions
     func addAnnotation(gestureRecognizer:UIGestureRecognizer){
-        let touchPoint = gestureRecognizer.locationInView(mapView)
-        let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
-        latitude = Double(newCoordinates.latitude)
-        longitude = Double(newCoordinates.longitude)
-        print("Longitude: ", longitude, ", Latitude: ", latitude)
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = newCoordinates
-        mapView.addAnnotation(annotation)
-        
-        //TODO: ADD PERSISTENCE
-        //CORE DATA
-        var dictionary = [String : AnyObject]()
-        
-        dictionary[Location.Keys.Latitude] = latitude
-        dictionary[Location.Keys.Longitude] = longitude
-
-        let locationToBeAdded = Location(dictionary: dictionary, context: sharedContext)
-        
-        self.locations.append(locationToBeAdded)
-        CoreDataStackManager.sharedInstance().saveContext()
+        if editingMap == false {
+            let touchPoint = gestureRecognizer.locationInView(mapView)
+            let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
+            latitude = Double(newCoordinates.latitude)
+            longitude = Double(newCoordinates.longitude)
+            print("Longitude: ", longitude, ", Latitude: ", latitude)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = newCoordinates
+            mapView.addAnnotation(annotation)
+            
+            //CORE DATA
+            var dictionary = [String : AnyObject]()
+            
+            dictionary[Location.Keys.Latitude] = latitude
+            dictionary[Location.Keys.Longitude] = longitude
+            
+            let locationToBeAdded = Location(dictionary: dictionary, context: sharedContext)
+            
+            self.locations.append(locationToBeAdded)
+            CoreDataStackManager.sharedInstance().saveContext()
+        }
     }
 }
 
@@ -187,19 +179,30 @@ extension MapViewController : MKMapViewDelegate {
     //MARK: -Segue in response to touch
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView){
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if editingMap == false {
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            
+            let vc = storyboard.instantiateViewControllerWithIdentifier("AlbumViewController") as! AlbumViewController
+            
+            vc.latitude = (view.annotation?.coordinate.latitude)!
+            vc.longitude = (view.annotation?.coordinate.longitude)!
+            vc.latitudeDelta = self.mapView.region.span.latitudeDelta
+            vc.longitudeDelta = self.mapView.region.span.longitudeDelta
+            
+            self.presentViewController(vc, animated: true, completion: nil)
+        } else {
+            //TODO: If editingMap = true, remove annotation
 
-        let vc = storyboard.instantiateViewControllerWithIdentifier("AlbumViewController") as! AlbumViewController
+        }
         
-        vc.latitude = (view.annotation?.coordinate.latitude)!
-        vc.longitude = (view.annotation?.coordinate.longitude)!
-        vc.latitudeDelta = self.mapView.region.span.latitudeDelta
-        vc.longitudeDelta = self.mapView.region.span.longitudeDelta
-        
-        self.presentViewController(vc, animated: true, completion: nil)
-        
-        //TODO: If editingMap = true, remove annotation
     }
+    
+    func mapViewDidFinishRenderingMap(mapView: MKMapView, fullyRendered: Bool) {
+        mySpinner.hidden = true
+        mySpinner.stopAnimating()
+        view.alpha = 1.0
+    }
+    
     
 }
 
