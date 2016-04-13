@@ -8,6 +8,6 @@
 
 import UIKit
 
-class FlickrImageCell: UICollectionViewCell {
+class FlickrImageCell: TaskCancelingCollectionViewCell {
     @IBOutlet weak var imageView: UIImageView!
 }

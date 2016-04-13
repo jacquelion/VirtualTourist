@@ -25,6 +25,8 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     }
     
     override func viewDidLoad() {
+        super.viewDidLoad()
+        
         loadMapView()
         //TODO: Check to see if pictures have already been downloaded
         
@@ -118,7 +120,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
         
         // get a reference to our storyboard cell
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! FlickrImageCell
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! TaskCancelingCollectionViewCell
         
         // Use the outlet in our custom class to get a reference to the collection view cell
         configureCell(cell, picture: picture)
@@ -131,8 +133,9 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     
     //TODO: Add Delegate Methods (controllerWillChangeContent)
     
-    func configureCell(cell: FlickrImageCell, picture: Picture) {
+    func configureCell(cell: TaskCancelingCollectionViewCell, picture: Picture) {
         var pictureImage = UIImage(named: "picturePlaceholder")
+
         cell.imageView.image = nil
         
         if picture.url == "" {
@@ -163,7 +166,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
             
             // This is the custom property on this cell. See TaskCancelingTableViewCell.swift for details.
         
-           // cell.taskToCancelifCellIsReused = task
+            cell.taskToCancelifCellIsReused = task
         }
         
         
