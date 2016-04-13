@@ -40,10 +40,6 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-        print(location)
-        print(location.pictures)
-        print(location.pictures.isEmpty)
-        
         if location.pictures.isEmpty {
             Flickr.sharedInstance.loadFlickrPictures(latitude, longitude: longitude) {
                 JSONResult, error in
@@ -60,8 +56,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
                             
                             return picture
                         }
-                        
-                        
+
                         // Update the table on the main thread
                         dispatch_async(dispatch_get_main_queue()) {
                             //TODO: Reload Data
@@ -113,7 +108,9 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     
     //MARK: - UICollectionViewDataSource protocol
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 12
+        let sectionInfo = self.fetchedResultsController.sections![section]
+        print(sectionInfo.numberOfObjects)
+        return sectionInfo.numberOfObjects
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {

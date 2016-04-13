@@ -44,8 +44,12 @@ class MapViewController: UIViewController {
     
     override func viewWillAppear(animated: Bool) {
         //Core Data: get all previously placed pins
+        loadMapAnnotations()
+    }
+    
+    func loadMapAnnotations(){
         locations = fetchAllLocations()
-        print("Locations: ", locations)
+        
         for i in locations{
             let annotation = MKPointAnnotation()
             annotation.coordinate = CLLocationCoordinate2D(latitude: i.latitude, longitude: i.longitude)
@@ -179,13 +183,13 @@ extension MapViewController : MKMapViewDelegate {
     //MARK: -Segue in response to touch
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView){
+        let coordinate = view.annotation?.coordinate
+
         if editingMap == false {
             let storyboard = UIStoryboard(name: "Main", bundle: nil)
             
             let vc = storyboard.instantiateViewControllerWithIdentifier("AlbumViewController") as! AlbumViewController
-            
-            let coordinate = view.annotation?.coordinate
-            print(coordinate)
+
             
             vc.latitude = (view.annotation?.coordinate.latitude)!
             vc.longitude = (view.annotation?.coordinate.longitude)!
@@ -193,19 +197,26 @@ extension MapViewController : MKMapViewDelegate {
             vc.longitudeDelta = self.mapView.region.span.longitudeDelta
             
             for location in locations {
-                if location.latitude == (view.annotation?.coordinate.latitude) {
-                    if location.longitude == (view.annotation?.coordinate.longitude) {
-                        vc.location = location
-                    }
+                if location.latitude == (coordinate!.latitude) && location.longitude == (coordinate!.longitude) {
+                    vc.location = location
+                    break
                 }
             }
             
             self.presentViewController(vc, animated: true, completion: nil)
         } else {
+            print("Deleted Pin")
             //TODO: If editingMap = true, remove annotation
-
+            for location in locations {
+                if location.latitude == (coordinate!.latitude) && location.longitude == (coordinate!.longitude) {
+                    sharedContext.deleteObject(location)
+                    CoreDataStackManager.sharedInstance().saveContext()
+                    let annotationToRemove = view.annotation
+                    self.mapView.removeAnnotation(annotationToRemove!)
+                    break
+                }
+            }
         }
-        
     }
     
     func mapViewDidFinishRenderingMap(mapView: MKMapView, fullyRendered: Bool) {

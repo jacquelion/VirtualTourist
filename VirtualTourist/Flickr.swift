@@ -40,8 +40,10 @@ class Flickr : NSObject {
         //self.displayImageFromFlickrBySearch(methodParameters)
         
         let session = NSURLSession.sharedSession()
-        let request = NSURLRequest(URL: flickrURLFromParameters(methodParameters))
-        
+        let url = flickrURLFromParameters(methodParameters)
+        print("URL", url)
+        let request = NSURLRequest(URL: url)
+        print("REQUEST: ", request)
         let task = session.dataTaskWithRequest(request) {data, response, error in
             
             if let error = error {
@@ -53,7 +55,7 @@ class Flickr : NSObject {
         }
         
         task.resume()
-        
+        print("TASK: ", task)
         return task
     }
     
@@ -182,7 +184,7 @@ class Flickr : NSObject {
         let parsedResult: AnyObject?
         do {
             parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments)
-            print(parsedResult)
+            print("Parsed Result: ", parsedResult)
         } catch let error as NSError {
             parsingError = error
             parsedResult = nil
