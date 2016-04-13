@@ -142,7 +142,7 @@
                                             <constraint firstAttribute="bottom" secondItem="n0S-hz-GCv" secondAttribute="bottom" id="xWu-W5-rAD"/>
                                         </constraints>
                                         <connections>
-                                            <outlet property="imageView" destination="n0S-hz-GCv" id="o5u-BF-SBe"/>
+                                            <outlet property="imageView" destination="n0S-hz-GCv" id="OdN-p1-OSk"/>
                                         </connections>
                                     </collectionViewCell>
                                 </cells>

@@ -9,5 +9,6 @@
 import UIKit
 
 class FlickrImageCell: TaskCancelingCollectionViewCell {
-    @IBOutlet weak var imageView: UIImageView!
+ 
+    //@IBOutlet weak var imageView: UIImageView!
 }
