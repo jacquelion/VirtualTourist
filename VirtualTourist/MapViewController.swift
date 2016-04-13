@@ -184,10 +184,21 @@ extension MapViewController : MKMapViewDelegate {
             
             let vc = storyboard.instantiateViewControllerWithIdentifier("AlbumViewController") as! AlbumViewController
             
+            let coordinate = view.annotation?.coordinate
+            print(coordinate)
+            
             vc.latitude = (view.annotation?.coordinate.latitude)!
             vc.longitude = (view.annotation?.coordinate.longitude)!
             vc.latitudeDelta = self.mapView.region.span.latitudeDelta
             vc.longitudeDelta = self.mapView.region.span.longitudeDelta
+            
+            for location in locations {
+                if location.latitude == (view.annotation?.coordinate.latitude) {
+                    if location.longitude == (view.annotation?.coordinate.longitude) {
+                        vc.location = location
+                    }
+                }
+            }
             
             self.presentViewController(vc, animated: true, completion: nil)
         } else {
