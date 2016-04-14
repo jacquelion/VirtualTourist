@@ -185,6 +185,7 @@
                         </variation>
                     </view>
                     <connections>
+                        <outlet property="collectionView" destination="B3U-qG-MkS" id="ZOQ-fY-9aH"/>
                         <outlet property="mapView" destination="Mvl-EH-L1D" id="vNm-AO-2t5"/>
                     </connections>
                 </viewController>

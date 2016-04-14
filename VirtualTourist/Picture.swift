@@ -21,7 +21,7 @@ class Picture : NSManagedObject {
     
     
     @NSManaged var url: String
-    @NSManaged var location: Location
+    @NSManaged var location: Location?
     
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
         super.init(entity: entity, insertIntoManagedObjectContext: context)

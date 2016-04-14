@@ -12,6 +12,7 @@ import MapKit
 
 class AlbumViewController : UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
     
+    @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
     var location: Location!
     
@@ -60,6 +61,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
                         // Update the table on the main thread
                         dispatch_async(dispatch_get_main_queue()) {
                             //TODO: Reload Data
+                            self.collectionView!.reloadData()
                         }
                     } else {
                         let error = NSError(domain: "Pictures for Location Parsing. Can't find photos in \(JSONResult)", code: 0, userInfo: nil)
@@ -147,7 +149,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
                 }
                 
                 if let data = data {
-                    // Craete the image
+                    // Create the image
                     let image = UIImage(data: data)
                     
                     // update the model, so that the infrmation gets cashed
