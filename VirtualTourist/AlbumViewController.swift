@@ -17,6 +17,11 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     var location: Location!
     var picturesToDeleteArray = [Picture]()
     
+    var selectedIndexes = [NSIndexPath]()
+    var insertedIndexPaths: [NSIndexPath]!
+    var deletedIndexPaths: [NSIndexPath]!
+    var updatedIndexPaths: [NSIndexPath]!
+    
     var latitude: Double = 0.0
     var longitude: Double = 0.0
     var longitudeDelta: Double = 0.0
@@ -31,12 +36,13 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         collectionView.allowsMultipleSelection = true
-
+        collectionView.delegate = self
+        collectionView.dataSource = self
         
         loadMapView()
         deletePicturesButton.hidden = true
-        //TODO: Check to see if pictures have already been downloaded
         
         do {
             try fetchedResultsController.performFetch()
@@ -45,43 +51,62 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         fetchedResultsController.delegate = self
     }
     
+    // Layout the collection view
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        // Lay out the collection view so that cells take up 1/3 of the width,
+        // with no space in between.
+        let layout : UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        layout.minimumLineSpacing = 0
+        layout.minimumInteritemSpacing = 0
+        
+        let width = floor(self.collectionView.frame.size.width/3)
+        layout.itemSize = CGSize(width: width, height: width)
+        collectionView.collectionViewLayout = layout
+    }
+    
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-        loadPictures()
+        //Check to see if pictures have already been downloaded, only load pictures if there are none stored already for location.
+
+        if location.pictures.isEmpty {
+            loadPictures()
+        }
     }
     
     func loadPictures(){
-        if location.pictures.isEmpty {
-            Flickr.sharedInstance.loadFlickrPictures(latitude, longitude: longitude) {
-                JSONResult, error in
-                if let error = error {
-                    print(error)
-                } else {
+        Flickr.sharedInstance.loadFlickrPictures(latitude, longitude: longitude) {
+            JSONResult, error in
+            if let error = error {
+                print(error)
+            } else {
+                
+                if let photosDictionary = JSONResult.valueForKey(Constants.FlickrResponseKeys.Photos) as? [String: AnyObject], photoArray = photosDictionary[Constants.FlickrResponseKeys.Photo] as? [[String:AnyObject]] {
                     
-                    if let photosDictionary = JSONResult.valueForKey(Constants.FlickrResponseKeys.Photos) as? [String: AnyObject], photoArray = photosDictionary[Constants.FlickrResponseKeys.Photo] as? [[String:AnyObject]] {
+                    let _ = photoArray.map() { (dictionary: [String: AnyObject]) -> Picture in
+                        let picture = Picture(dictionary: dictionary, context: self.sharedContext)
                         
-                        let _ = photoArray.map() { (dictionary: [String: AnyObject]) -> Picture in
-                            let picture = Picture(dictionary: dictionary, context: self.sharedContext)
-                            
-                            picture.location = self.location
-                            
-                            return picture
-                        }
+                        picture.location = self.location
                         
-                        // Update the table on the main thread
-                        dispatch_async(dispatch_get_main_queue()) {
-                            //TODO: Reload Data
-                            self.collectionView!.reloadData()
-                        }
-                    } else {
-                        let error = NSError(domain: "Pictures for Location Parsing. Can't find photos in \(JSONResult)", code: 0, userInfo: nil)
-                        print(error)
+                        return picture
                     }
+                    
+                    // Update the table on the main thread
+                    dispatch_async(dispatch_get_main_queue()) {
+                        //TODO: Reload Data
+                        print("RELOADING DATA")
+                        self.collectionView!.reloadData()
+                    }
+                } else {
+                    let error = NSError(domain: "Pictures for Location Parsing. Can't find photos in \(JSONResult)", code: 0, userInfo: nil)
+                    print(error)
                 }
             }
         }
-
     }
     
     func loadMapView(){
@@ -96,7 +121,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         mapView.addAnnotation(annotation)
     }
     
-    //MARK: - Core Data Convenience 
+    //MARK: - Core Data Convenience
     var sharedContext: NSManagedObjectContext {
         return CoreDataStackManager.sharedInstance().managedObjectContext
     }
@@ -106,7 +131,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         let fetchRequest = NSFetchRequest(entityName: "Picture")
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key:"id", ascending: true)]
- //       fetchRequest.predicate = NSPredicate(format: "location == %a", self.location)
+        //       fetchRequest.predicate = NSPredicate(format: "location == %a", self.location)
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
                                                                   managedObjectContext: self.sharedContext,
@@ -143,57 +168,121 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         
         newCollectionButton.hidden = true
+        collectionView.deselectItemAtIndexPath(indexPath, animated: false)
         
-        var cell = collectionView.cellForItemAtIndexPath(indexPath)
-        if cell?.selected == true {
-            cell!.layer.opacity = 0.2
+        let cell = collectionView.cellForItemAtIndexPath(indexPath) as! TaskCancelingCollectionViewCell
+        
+        if let index = selectedIndexes.indexOf(indexPath) {
+            cell.layer.opacity = 1.0
+            selectedIndexes.removeAtIndex(index)
         } else {
-            cell!.layer.opacity = 1.0
+            cell.layer.opacity = 0.2
+            selectedIndexes.append(indexPath)
         }
         
-        let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
-        
-        picturesToDeleteArray.append(picture)
-        
-        deletePicturesButton.hidden = false
+        if (selectedIndexes.count > 0) {
+            newCollectionButton.hidden = true
+            deletePicturesButton.hidden = false
+        } else {
+            newCollectionButton.hidden = false
+            deletePicturesButton.hidden = true
+        }
+
     }
     
-    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
-        
-        let cell = collectionView.cellForItemAtIndexPath(indexPath)
-        cell!.layer.opacity = 1
-        
-        let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
-        let indexToDelete = picturesToDeleteArray.indexOf(picture)
-        picturesToDeleteArray.removeAtIndex(indexToDelete!)
-        
-        if picturesToDeleteArray.isEmpty {
-            deletePicturesButton.hidden = true
-            newCollectionButton.hidden = false
-        }
-    }
     
     @IBAction func deletePictures(sender: AnyObject) {
-        print("IndexPathsForSelectedItems: ", self.collectionView.indexPathsForSelectedItems())
+        var picturesToDelete = [Picture]()
         
-        for picture in picturesToDeleteArray {
-            sharedContext.deleteObject(picture)
-            CoreDataStackManager.sharedInstance().saveContext()
+        for selectedIndex in selectedIndexes {
+            picturesToDelete.append(fetchedResultsController.objectAtIndexPath(selectedIndex) as! Picture)
         }
+        
+        for picture in picturesToDelete {
+            sharedContext.deleteObject(picture)
+        }
+        
+        selectedIndexes = [NSIndexPath]()
         
         deletePicturesButton.hidden = true
         newCollectionButton.hidden = false
-        //reload data
-        loadPictures()
-        collectionView.reloadData()
         
+        //reload data
+        CoreDataStackManager.sharedInstance().saveContext()
+        //loadPictures()
     }
     
+    @IBAction func getNewCollection(sender: AnyObject) {
+        if let fetchedObjects = self.fetchedResultsController.fetchedObjects {
+            for object in fetchedObjects{
+                let picture = object as! Picture
+                self.sharedContext.deleteObject(picture)
+            }
+            CoreDataStackManager.sharedInstance().saveContext()
+        }
+        loadPictures()
+    }
+
     //TODO: Add Delegate Methods (controllerWillChangeContent)
+    //MARK: - Fetched Results Controller Delegate
+    func controllerWillChangeContent(controller: NSFetchedResultsController) {
+        //start with empty arrays of each type:
+        insertedIndexPaths = [NSIndexPath]()
+        deletedIndexPaths = [NSIndexPath]()
+        updatedIndexPaths = [NSIndexPath]()
+        
+        print("in controllerWillChangeContent")
+    }
+    
+    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?){
+        switch type{
+            
+        case .Insert:
+            print("Insert an item")
+            insertedIndexPaths.append(newIndexPath!)
+            break
+        case .Delete:
+            print("Delete an item")
+            deletedIndexPaths.append(indexPath!)
+            break
+        case .Update:
+            print("Update an item.")
+            updatedIndexPaths.append(indexPath!)
+            break
+        case .Move:
+            print("Move an item. We don't expect to see this in this app.")
+            break
+        default:
+            break
+        }
+    }
+    
+    func controllerDidChangeContent(controller: NSFetchedResultsController) {
+        
+        print("in controllerDidChangeContent. changes.count: \(insertedIndexPaths.count + deletedIndexPaths.count)")
+        
+        collectionView.performBatchUpdates({() -> Void in
+            
+            for indexPath in self.insertedIndexPaths {
+                self.collectionView.insertItemsAtIndexPaths([indexPath])
+            }
+            
+            for indexPath in self.deletedIndexPaths {
+                self.collectionView.deleteItemsAtIndexPaths([indexPath])
+            }
+            
+            for indexPath in self.updatedIndexPaths {
+                self.collectionView.reloadItemsAtIndexPaths([indexPath])
+            }
+            
+            }, completion: nil)
+    }
+    
+    //MARK: - Configure Cell
     
     func configureCell(cell: TaskCancelingCollectionViewCell, picture: Picture) {
         var pictureImage = UIImage(named: "picturePlaceholder")
-
+        
         cell.imageView.image = nil
         
         if picture.url == "" {
@@ -223,7 +312,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
             }
             
             // This is the custom property on this cell. See TaskCancelingTableViewCell.swift for details.
-        
+            
             cell.taskToCancelifCellIsReused = task
         }
         

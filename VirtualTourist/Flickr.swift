@@ -67,15 +67,10 @@ class Flickr : NSObject {
     
     func taskForImage(imageURL: String, completionHandler: (imageData: NSData?, error: NSError?) -> Void) -> NSURLSessionTask {
         
-        print("imageURL: ", imageURL)
         let url = NSURL(string: imageURL)
-        
-        print("URL: ", url)
-        
         let request = NSURLRequest(URL: url!)
         
         let task = session.dataTaskWithRequest(request) {data, response, downloadError in
-            
             if let error = downloadError {
                 print("Download Error: ", error)
                 completionHandler(imageData: nil, error: error)
@@ -87,7 +82,6 @@ class Flickr : NSObject {
         task.resume()
         
         return task
-    
     }
     
     // Parsing the JSON
