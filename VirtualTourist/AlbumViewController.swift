@@ -72,17 +72,16 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-        
+
         //Check to see if pictures have already been downloaded, only load pictures if there are none stored already for location.
-        
-        if (!location.loadedPictures) {
+        print("Location already loaded pictures? ", location.loadedPictures)
+        if (location.loadedPictures == false) {
             mySpinner.startAnimating()
-            loadPictures(self.location)
+            loadPictures(location)
         }
     }
     
     func loadPictures(location: Location){
-        
         location.loadedPictures = true
         Flickr.sharedInstance.loadFlickrPictures(location) { result, error in
             if let error = error {
@@ -120,7 +119,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         let fetchRequest = NSFetchRequest(entityName: "Picture")
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key:"id", ascending: true)]
-        //       fetchRequest.predicate = NSPredicate(format: "location == %a", self.location)
+       // fetchRequest.predicate = NSPredicate(format: "location == %a", self.location)
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
                                                                   managedObjectContext: self.sharedContext,
@@ -211,7 +210,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
             }
             CoreDataStackManager.sharedInstance().saveContext()
         }
-        loadPictures(location)
+        loadPictures(self.location)
     }
 
     //MARK: - Fetched Results Controller Delegate
@@ -280,14 +279,15 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
             cell.cellSpinner.stopAnimating()
         } else {
             picture.loadUpdateHandler = nil
+            cell.imageView.image = UIImage(named: "picturePlaceholder")
             cell.cellSpinner.startAnimating()
-            let pictureImage = UIImage(named: "picturePlaceholder")
 
             if let imageURL = NSURL(string: picture.url) {
                 Flickr.sharedInstance.taskForImage(imageURL) { data, error in
                     if let error = error {
                         print("error downloading photos from imageURL: \(imageURL) \(error.localizedDescription)")
                         dispatch_async(dispatch_get_main_queue()){
+                            picture.loadUpdateHandler = nil
                             cell.imageView.image = UIImage(named: "pictureNoImage")
                             cell.cellSpinner.stopAnimating()
                         }

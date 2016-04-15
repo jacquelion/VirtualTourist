@@ -59,7 +59,7 @@ class Flickr : NSObject {
                         
                         self.taskForGetMethod(randomPageParameters) { randomPageJSONResult, randomPageError in
                             if let randomPageError = randomPageError {
-                                completionHandler(result: nil, error: error)
+                                completionHandler(result: nil, error: randomPageError)
                             } else {
                                 if let picturesDictionary = randomPageJSONResult.valueForKey(Constants.FlickrResponseKeys.Photos) {
                                     if let totalPicturesString = picturesDictionary.valueForKey(Constants.FlickrResponseKeys.Total) as? String {

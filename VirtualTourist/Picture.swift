@@ -103,6 +103,7 @@ class Picture : NSManagedObject {
         
         set {
             Flickr.Caches.imageCache.storeImage(newValue, withIdentifier: path!)
+            loadUpdateHandler?()
         }
     }
 }

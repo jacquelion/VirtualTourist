@@ -206,7 +206,6 @@ extension MapViewController : MKMapViewDelegate {
             self.presentViewController(vc, animated: true, completion: nil)
         } else {
             print("Deleted Pin")
-            //TODO: If editingMap = true, remove annotation
             for location in locations {
                 if location.latitude == (coordinate!.latitude) && location.longitude == (coordinate!.longitude) {
                     sharedContext.deleteObject(location)
