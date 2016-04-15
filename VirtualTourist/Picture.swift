@@ -19,7 +19,7 @@ class Picture : NSManagedObject {
         static let url = "url_m"
     }
     
-    
+    @NSManaged var id: String
     @NSManaged var url: String
     @NSManaged var location: Location?
     
@@ -34,6 +34,7 @@ class Picture : NSManagedObject {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
         
         // Dictionary
+        id = dictionary[Keys.id] as! String
         url = dictionary[Keys.url] as! String
         
     }

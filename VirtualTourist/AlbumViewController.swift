@@ -15,11 +15,15 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
     var location: Location!
+    var picturesToDeleteArray = [Picture]()
     
     var latitude: Double = 0.0
     var longitude: Double = 0.0
     var longitudeDelta: Double = 0.0
     var latitudeDelta: Double = 0.0
+    @IBOutlet weak var newCollectionButton: UIButton!
+    @IBOutlet weak var deletePicturesButton: UIButton!
+    
     
     @IBAction func done(sender: AnyObject) {
         dismissViewControllerAnimated(true, completion: nil)
@@ -27,8 +31,11 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        collectionView.allowsMultipleSelection = true
+
         
         loadMapView()
+        deletePicturesButton.hidden = true
         //TODO: Check to see if pictures have already been downloaded
         
         do {
@@ -41,6 +48,10 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
+        loadPictures()
+    }
+    
+    func loadPictures(){
         if location.pictures.isEmpty {
             Flickr.sharedInstance.loadFlickrPictures(latitude, longitude: longitude) {
                 JSONResult, error in
@@ -57,7 +68,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
                             
                             return picture
                         }
-
+                        
                         // Update the table on the main thread
                         dispatch_async(dispatch_get_main_queue()) {
                             //TODO: Reload Data
@@ -70,7 +81,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
                 }
             }
         }
-        
+
     }
     
     func loadMapView(){
@@ -129,6 +140,54 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     }
     
     //TODO: Add delete functionality
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        
+        newCollectionButton.hidden = true
+        
+        var cell = collectionView.cellForItemAtIndexPath(indexPath)
+        if cell?.selected == true {
+            cell!.layer.opacity = 0.2
+        } else {
+            cell!.layer.opacity = 1.0
+        }
+        
+        let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
+        
+        picturesToDeleteArray.append(picture)
+        
+        deletePicturesButton.hidden = false
+    }
+    
+    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
+        
+        let cell = collectionView.cellForItemAtIndexPath(indexPath)
+        cell!.layer.opacity = 1
+        
+        let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
+        let indexToDelete = picturesToDeleteArray.indexOf(picture)
+        picturesToDeleteArray.removeAtIndex(indexToDelete!)
+        
+        if picturesToDeleteArray.isEmpty {
+            deletePicturesButton.hidden = true
+            newCollectionButton.hidden = false
+        }
+    }
+    
+    @IBAction func deletePictures(sender: AnyObject) {
+        print("IndexPathsForSelectedItems: ", self.collectionView.indexPathsForSelectedItems())
+        
+        for picture in picturesToDeleteArray {
+            sharedContext.deleteObject(picture)
+            CoreDataStackManager.sharedInstance().saveContext()
+        }
+        
+        deletePicturesButton.hidden = true
+        newCollectionButton.hidden = false
+        //reload data
+        loadPictures()
+        collectionView.reloadData()
+        
+    }
     
     //TODO: Add Delegate Methods (controllerWillChangeContent)
     
@@ -171,7 +230,6 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         
         cell.imageView!.image = pictureImage
     }
-    
     
     
 }
