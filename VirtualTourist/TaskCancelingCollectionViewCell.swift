@@ -14,6 +14,8 @@ class TaskCancelingCollectionViewCell : UICollectionViewCell {
     // value is set it canceles the previous NSURLSessionTask
     
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var cellSpinner: UIActivityIndicatorView!
+    
     var imageName: String = ""
     
     var taskToCancelifCellIsReused: NSURLSessionTask? {

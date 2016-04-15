@@ -11,44 +11,46 @@ import CoreData
 import MapKit
 
 class AlbumViewController : UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
+    @IBOutlet weak var mySpinner: UIActivityIndicatorView!
     
+    //MARK - Outlets
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var newCollectionButton: UIButton!
+    @IBOutlet weak var deletePicturesButton: UIButton!
+
     var location: Location!
-    var picturesToDeleteArray = [Picture]()
     
+    //Hold indexes of selected cells
     var selectedIndexes = [NSIndexPath]()
+    //Track when cells are inserted, deleted, or updated.
     var insertedIndexPaths: [NSIndexPath]!
     var deletedIndexPaths: [NSIndexPath]!
     var updatedIndexPaths: [NSIndexPath]!
     
+    //Set default map view
     var latitude: Double = 0.0
     var longitude: Double = 0.0
     var longitudeDelta: Double = 0.0
     var latitudeDelta: Double = 0.0
-    @IBOutlet weak var newCollectionButton: UIButton!
-    @IBOutlet weak var deletePicturesButton: UIButton!
     
-    
-    @IBAction func done(sender: AnyObject) {
-        dismissViewControllerAnimated(true, completion: nil)
-    }
-    
+    //MARK - LifeCycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        deletePicturesButton.hidden = true
         
         collectionView.allowsMultipleSelection = true
         collectionView.delegate = self
         collectionView.dataSource = self
         
-        loadMapView()
-        deletePicturesButton.hidden = true
+        fetchedResultsController.delegate = self
         
         do {
             try fetchedResultsController.performFetch()
         } catch{}
         
-        fetchedResultsController.delegate = self
+        loadMapView()
     }
     
     // Layout the collection view
@@ -72,39 +74,26 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         super.viewWillAppear(animated)
         
         //Check to see if pictures have already been downloaded, only load pictures if there are none stored already for location.
-
-        if location.pictures.isEmpty {
-            loadPictures()
+        
+        if (!location.loadedPictures) {
+            mySpinner.startAnimating()
+            loadPictures(self.location)
         }
     }
     
-    func loadPictures(){
-        Flickr.sharedInstance.loadFlickrPictures(latitude, longitude: longitude) {
-            JSONResult, error in
+    func loadPictures(location: Location){
+        
+        location.loadedPictures = true
+        Flickr.sharedInstance.loadFlickrPictures(location) { result, error in
             if let error = error {
                 print(error)
             } else {
-                
-                if let photosDictionary = JSONResult.valueForKey(Constants.FlickrResponseKeys.Photos) as? [String: AnyObject], photoArray = photosDictionary[Constants.FlickrResponseKeys.Photo] as? [[String:AnyObject]] {
-                    
-                    let _ = photoArray.map() { (dictionary: [String: AnyObject]) -> Picture in
-                        let picture = Picture(dictionary: dictionary, context: self.sharedContext)
-                        
-                        picture.location = self.location
-                        
-                        return picture
-                    }
-                    
-                    // Update the table on the main thread
-                    dispatch_async(dispatch_get_main_queue()) {
-                        //TODO: Reload Data
-                        print("RELOADING DATA")
-                        self.collectionView!.reloadData()
-                    }
-                } else {
-                    let error = NSError(domain: "Pictures for Location Parsing. Can't find photos in \(JSONResult)", code: 0, userInfo: nil)
-                    print(error)
+                dispatch_async(dispatch_get_main_queue()) {
+                    CoreDataStackManager.sharedInstance().saveContext()
                 }
+            }
+            dispatch_async(dispatch_get_main_queue()) {
+                self.mySpinner.stopAnimating()
             }
         }
     }
@@ -152,22 +141,19 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
-        
         // get a reference to our storyboard cell
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reuseIdentifier, forIndexPath: indexPath) as! TaskCancelingCollectionViewCell
         
         // Use the outlet in our custom class to get a reference to the collection view cell
-        configureCell(cell, picture: picture)
-        
+        configureCell(cell, atIndexPath: indexPath)
         
         return cell
     }
     
-    //TODO: Add delete functionality
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         
         newCollectionButton.hidden = true
+        //User can select and deselect on tap
         collectionView.deselectItemAtIndexPath(indexPath, animated: false)
         
         let cell = collectionView.cellForItemAtIndexPath(indexPath) as! TaskCancelingCollectionViewCell
@@ -190,6 +176,10 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
 
     }
     
+    //MARK - Outlet Actions
+    @IBAction func done(sender: AnyObject) {
+        dismissViewControllerAnimated(true, completion: nil)
+    }
     
     @IBAction func deletePictures(sender: AnyObject) {
         var picturesToDelete = [Picture]()
@@ -213,6 +203,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     }
     
     @IBAction func getNewCollection(sender: AnyObject) {
+        mySpinner.startAnimating()
         if let fetchedObjects = self.fetchedResultsController.fetchedObjects {
             for object in fetchedObjects{
                 let picture = object as! Picture
@@ -220,10 +211,9 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
             }
             CoreDataStackManager.sharedInstance().saveContext()
         }
-        loadPictures()
+        loadPictures(location)
     }
 
-    //TODO: Add Delegate Methods (controllerWillChangeContent)
     //MARK: - Fetched Results Controller Delegate
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
         //start with empty arrays of each type:
@@ -280,44 +270,57 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
     
     //MARK: - Configure Cell
     
-    func configureCell(cell: TaskCancelingCollectionViewCell, picture: Picture) {
-        var pictureImage = UIImage(named: "picturePlaceholder")
+    func configureCell(cell: TaskCancelingCollectionViewCell, atIndexPath indexPath: NSIndexPath) {
         
-        cell.imageView.image = nil
+        let picture = fetchedResultsController.objectAtIndexPath(indexPath) as! Picture
         
-        if picture.url == "" {
-            pictureImage = UIImage(named: "pictureNoImage")
-        } else if picture.pictureImage != nil {
-            pictureImage = picture.pictureImage
+        if let image = picture.pictureImage{
+            picture.loadUpdateHandler = nil
+            cell.imageView.image = image
+            cell.cellSpinner.stopAnimating()
         } else {
-            let task = Flickr.sharedInstance.taskForImage(picture.url) { data, error in
-                
-                if let error = error {
-                    print("Poster download error: \(error.localizedDescription)")
-                }
-                
-                if let data = data {
-                    // Create the image
-                    let image = UIImage(data: data)
-                    
-                    // update the model, so that the infrmation gets cashed
-                    picture.pictureImage = image
-                    
-                    // update the cell later, on the main thread
-                    
-                    dispatch_async(dispatch_get_main_queue()) {
-                        cell.imageView!.image = image
+            picture.loadUpdateHandler = nil
+            cell.cellSpinner.startAnimating()
+            let pictureImage = UIImage(named: "picturePlaceholder")
+
+            if let imageURL = NSURL(string: picture.url) {
+                Flickr.sharedInstance.taskForImage(imageURL) { data, error in
+                    if let error = error {
+                        print("error downloading photos from imageURL: \(imageURL) \(error.localizedDescription)")
+                        dispatch_async(dispatch_get_main_queue()){
+                            cell.imageView.image = UIImage(named: "pictureNoImage")
+                            cell.cellSpinner.stopAnimating()
+                        }
+                    }
+                    else {
+                        dispatch_async(dispatch_get_main_queue()) {
+                            
+                            if let pictureImage = UIImage(data: data!)
+                            {
+                                picture.loadUpdateHandler = { [unowned self] () -> Void in
+                                    dispatch_async(dispatch_get_main_queue(), {
+                                        self.collectionView.reloadItemsAtIndexPaths([indexPath])
+                                       // cell.cellSpinner.hidden = true
+                                    })
+                                }
+                                picture.pictureImage = pictureImage
+                            }
+                            else
+                            {
+                                picture.loadUpdateHandler = nil
+                                cell.imageView.image = UIImage(named: "pictureNoImage")
+                                cell.cellSpinner.stopAnimating()
+                            }
+                        }
                     }
                 }
             }
-            
-            // This is the custom property on this cell. See TaskCancelingTableViewCell.swift for details.
-            
-            cell.taskToCancelifCellIsReused = task
+            else {
+                cell.imageView.image = UIImage(named: "pictureNoImage")
+                cell.cellSpinner.stopAnimating()
+
+            }
         }
-        
-        
-        cell.imageView!.image = pictureImage
     }
     
     

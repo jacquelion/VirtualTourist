@@ -18,6 +18,7 @@ class Location : NSManagedObject {
     
     @NSManaged var latitude: Double
     @NSManaged var longitude: Double
+    @NSManaged var loadedPictures: Bool
     @NSManaged var pictures: [Picture]
     
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
@@ -30,6 +31,7 @@ class Location : NSManagedObject {
         
         longitude = dictionary[Keys.Longitude] as! Double
         latitude = dictionary[Keys.Latitude] as! Double
+        loadedPictures = false
     }
     
 

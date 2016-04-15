@@ -13,8 +13,13 @@ class Flickr : NSObject {
     
     typealias CompletionHandler = (result: AnyObject!, error: NSError?) -> Void
     
-    var pictures = [[String: AnyObject]]()
+    //MARK: -Shared Instance (Singleton)
+    static let sharedInstance = Flickr()
+
+    
+    //var pictures = [[String: AnyObject]]()
     var picturesArray = [UIImage]()
+    var pictures = NSSet()
     
     var session: NSURLSession
     
@@ -24,13 +29,13 @@ class Flickr : NSObject {
     }
     
     //MARK: FLICKR API
-    func loadFlickrPictures(latitude: Double, longitude: Double, completionHandler: CompletionHandler) -> NSURLSessionDataTask {
+    func loadFlickrPictures(location: Location, completionHandler: CompletionHandler) -> Void {
         // TODO: Set necessary parameters!
         print("Started search by lat/lon")
         
         let methodParameters: [String: String!] = [
             Constants.FlickrParameterKeys.SafeSearch : Constants.FlickrParameterValues.UseSafeSearch,
-            Constants.FlickrParameterKeys.BoundingBox : self.bboxString(latitude, longitude: longitude),
+            Constants.FlickrParameterKeys.BoundingBox : bboxString(location.latitude, longitude: location.longitude),
             Constants.FlickrParameterKeys.Extras : Constants.FlickrParameterValues.MediumURL,
             Constants.FlickrParameterKeys.APIKey : Constants.FlickrParameterValues.APIKey,
             Constants.FlickrParameterKeys.Method : Constants.FlickrParameterValues.SearchMethod,
@@ -38,42 +43,96 @@ class Flickr : NSObject {
             Constants.FlickrParameterKeys.Format : Constants.FlickrParameterValues.ResponseFormat
         ]
         
-        let session = NSURLSession.sharedSession()
-        let request = NSURLRequest(URL: flickrURLFromParameters(methodParameters))
-        let task = session.dataTaskWithRequest(request) {data, response, error in
-            
+        //Please note: I referred to: https://github.com/flyingSarah/VirtualTourist for this function. Many thanks to flyingSarah to getting me unstuck.
+        taskForGetMethod(methodParameters) {JSONResult, error in
             if let error = error {
                 completionHandler(result: nil, error: error)
             } else {
-                print("Step 3 - taskForResource's completionHandler is invoked.")
-                Flickr.parseJSONWithCompletionHandler(data!, completionHandler: completionHandler)
+                
+                if let result = JSONResult.valueForKey(Constants.FlickrResponseKeys.Photos) as? NSDictionary {
+                    if let totalPages = result.valueForKey(Constants.FlickrResponseKeys.Pages) as? Int {
+                        let pageLimit = min(totalPages, Constants.Flickr.MaxPages)
+                        let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
+                        let pageNumberString = String(randomPage)
+                        var randomPageParameters = methodParameters
+                        randomPageParameters[Constants.FlickrParameterValues.Page] = pageNumberString
+                        
+                        self.taskForGetMethod(randomPageParameters) { randomPageJSONResult, randomPageError in
+                            if let randomPageError = randomPageError {
+                                completionHandler(result: nil, error: error)
+                            } else {
+                                if let picturesDictionary = randomPageJSONResult.valueForKey(Constants.FlickrResponseKeys.Photos) {
+                                    if let totalPicturesString = picturesDictionary.valueForKey(Constants.FlickrResponseKeys.Total) as? String {
+                                        let totalPictures = Int(totalPicturesString)
+                                        if (totalPictures > 0) {
+                                            if let pictureArray = picturesDictionary.valueForKey("photo") as? [[String:AnyObject]] {
+                                                if(pictureArray.count > 0) {
+                                                    let pictures = Picture.picturesFromResults(pictureArray, location: location)
+                                                    Flickr.sharedInstance.pictures = pictures
+                                                    
+                                                    completionHandler(result: pictures, error: nil)
+                                                } else {
+                                                    if let totalPageOnePicturesString = result.valueForKey(Constants.FlickrResponseKeys.Total) as? String {
+                                                        let totalPageOnePictures = Int(totalPageOnePicturesString)
+                                                        if (totalPageOnePictures > 0) {
+                                                            if let pageOnePictureArray = result.valueForKey("photo") as? [[String: AnyObject]] {
+                                                                if(pageOnePictureArray.count > 1) {
+                                                                    let pictures = Picture.picturesFromResults(pageOnePictureArray, location: location)
+                                                                    Flickr.sharedInstance.pictures = pictures
+                                                                    completionHandler(result: pictures, error: nil)
+                                                                }
+                                                                else {
+                                                                    completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Photos array was empty on Page 1 of Flickr Results."]))
+                                                                }
+                                                            }
+                                                            else {
+                                                                completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not find photo key from Page 1 of Flickr Results."]))
+                                                            }
+                                                        }
+                                                        else {
+                                                            completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Found 0 photos from Page 1 of Flickr Results."]))
+                                                        }
+                                                    }
+                                                    else {
+                                                        completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not find total photo key from Flickr Results."]))
+                                                    }
+                                                }
+                                            }
+                                            else {
+                                                completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not find photo key from Flickr Results."]))
+                                            }
+                                        }
+                                        else {
+                                            completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Found 0 photos from Flickr Results."]))
+                                        }
+                                    }
+                                    else {
+                                        completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not find total Photos key from Flickr Results."]))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not find total pages key from Flickr Results."]))
+                    }
+                }
+                else {
+                    completionHandler(result: nil, error: NSError(domain: "loadPhotos parsing", code: 0, userInfo: [NSLocalizedDescriptionKey: "Could not aquire photos from Flickr Result."]))
+                }
             }
         }
-        
-        task.resume()
-        return task
     }
     
-    private func bboxString(latitude: Double, longitude: Double) -> String {
-        let minimumLon = max(longitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.0)
-        let minimumLat = max(latitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.0)
-        let maximumLon = min(longitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.1)
-        let maximumLat = min(latitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.1)
+    func taskForImage(imageURL: NSURL, completionHandler: (imageData: NSData?, error: NSError?) -> Void) -> NSURLSessionTask {
         
-        print("\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)")
-        
-        return "\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)"
-    }
-    
-    func taskForImage(imageURL: String, completionHandler: (imageData: NSData?, error: NSError?) -> Void) -> NSURLSessionTask {
-        
-        let url = NSURL(string: imageURL)
-        let request = NSURLRequest(URL: url!)
+        let request = NSURLRequest(URL: imageURL)
         
         let task = session.dataTaskWithRequest(request) {data, response, downloadError in
             if let error = downloadError {
                 print("Download Error: ", error)
-                completionHandler(imageData: nil, error: error)
+                let newError = Flickr.errorForData(data, response: response, error: error)
+                completionHandler(imageData: nil, error: newError)
             } else {
                 completionHandler(imageData: data, error: nil)
             }
@@ -84,32 +143,20 @@ class Flickr : NSObject {
         return task
     }
     
-    // Parsing the JSON
+    //MARK: Helpers
     
-    class func parseJSONWithCompletionHandler(data: NSData, completionHandler: CompletionHandler) {
-        var parsingError: NSError? = nil
+    func bboxString(latitude: Double, longitude: Double) -> String {
+        let minimumLon = max(longitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.0)
+        let minimumLat = max(latitude - Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.0)
+        let maximumLon = min(longitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLonRange.1)
+        let maximumLat = min(latitude + Constants.Flickr.SearchBBoxHalfWidth, Constants.Flickr.SearchLatRange.1)
         
-        let parsedResult: AnyObject?
-        do {
-            parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments)
-            print("Parsed Result: ", parsedResult)
-        } catch let error as NSError {
-            parsingError = error
-            parsedResult = nil
-        }
+        print("\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)")
         
-        if let error = parsingError {
-            completionHandler(result: nil, error: error)
-        } else {
-            print("Step 4 - parseJSONWithCompletionHandler is invoked.")
-            completionHandler(result: parsedResult, error: nil)
-        }
+        return "\(minimumLon), \(minimumLat), \(maximumLon), \(maximumLat)"
     }
-    
-    
-    // MARK: Helper for Creating a URL from Parameters
-    
-    private func flickrURLFromParameters(parameters: [String:AnyObject]) -> NSURL {
+
+    func flickrURLFromParameters(parameters: [String:AnyObject]) -> NSURL {
         
         let components = NSURLComponents()
         components.scheme = Constants.Flickr.APIScheme
@@ -125,13 +172,11 @@ class Flickr : NSObject {
         return components.URL!
     }
 
-    //MARK: -Shared Instance (Singleton)
-    static let sharedInstance = Flickr()
     
     // MARK: - Shared Image Cache
     
     struct Caches {
         static let imageCache = ImageCache()
     }
-
+    
 }

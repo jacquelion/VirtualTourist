@@ -23,6 +23,7 @@
 		6D733F841CBC847300518B2E /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D733F831CBC847300518B2E /* Constants.swift */; };
 		6D733F861CBC859700518B2E /* CoreDataStackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D733F851CBC859700518B2E /* CoreDataStackManager.swift */; };
 		6D733F881CBC8ACF00518B2E /* Flickr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D733F871CBC8ACF00518B2E /* Flickr.swift */; };
+		6DDE8BA01CC145E500899367 /* FlickrConvenience.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DDE8B9F1CC145E500899367 /* FlickrConvenience.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +45,7 @@
 		6D733F831CBC847300518B2E /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		6D733F851CBC859700518B2E /* CoreDataStackManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataStackManager.swift; sourceTree = "<group>"; };
 		6D733F871CBC8ACF00518B2E /* Flickr.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Flickr.swift; sourceTree = "<group>"; };
+		6DDE8B9F1CC145E500899367 /* FlickrConvenience.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrConvenience.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +99,7 @@
 				6D733F811CBC846A00518B2E /* Picture.swift */,
 				6D733F831CBC847300518B2E /* Constants.swift */,
 				6D733F871CBC8ACF00518B2E /* Flickr.swift */,
+				6DDE8B9F1CC145E500899367 /* FlickrConvenience.swift */,
 				6D3E35501CBDC57900A57157 /* ImageCache.swift */,
 			);
 			name = Flickr;
@@ -217,6 +220,7 @@
 				6D42CE211CBD7588008E7060 /* FlickrImageCell.swift in Sources */,
 				6D733F801CBC845E00518B2E /* Location.swift in Sources */,
 				6D733F7D1CBC751800518B2E /* Model.xcdatamodeld in Sources */,
+				6DDE8BA01CC145E500899367 /* FlickrConvenience.swift in Sources */,
 				6D733F841CBC847300518B2E /* Constants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

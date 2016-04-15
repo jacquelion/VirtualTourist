@@ -124,6 +124,10 @@
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
+                                <activityIndicatorView key="backgroundView" hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" id="kf5-9g-SiY">
+                                    <rect key="frame" x="0.0" y="0.0" width="600" height="333"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                </activityIndicatorView>
                                 <cells>
                                     <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="FlickrImageCell" id="DJU-sL-4u8" customClass="TaskCancelingCollectionViewCell" customModule="VirtualTourist" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="118" height="118"/>
@@ -135,6 +139,9 @@
                                                 <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="n0S-hz-GCv">
                                                     <rect key="frame" x="1" y="0.0" width="117" height="118"/>
                                                 </imageView>
+                                                <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="f4m-2r-52t">
+                                                    <rect key="frame" x="49" y="49" width="20" height="20"/>
+                                                </activityIndicatorView>
                                             </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                         </view>
@@ -143,8 +150,11 @@
                                             <constraint firstItem="n0S-hz-GCv" firstAttribute="top" secondItem="DJU-sL-4u8" secondAttribute="top" id="WaR-tX-wsA"/>
                                             <constraint firstAttribute="trailing" secondItem="n0S-hz-GCv" secondAttribute="trailing" id="ZCV-Ea-3Vj"/>
                                             <constraint firstAttribute="bottom" secondItem="n0S-hz-GCv" secondAttribute="bottom" id="i6Y-Ua-9UK"/>
+                                            <constraint firstItem="f4m-2r-52t" firstAttribute="centerX" secondItem="n0S-hz-GCv" secondAttribute="centerX" id="k61-Kf-hqu"/>
+                                            <constraint firstItem="f4m-2r-52t" firstAttribute="centerY" secondItem="n0S-hz-GCv" secondAttribute="centerY" id="vpf-T2-fxy"/>
                                         </constraints>
                                         <connections>
+                                            <outlet property="cellSpinner" destination="f4m-2r-52t" id="MwH-Xj-ieu"/>
                                             <outlet property="imageView" destination="n0S-hz-GCv" id="OdN-p1-OSk"/>
                                         </connections>
                                     </collectionViewCell>
@@ -205,6 +215,7 @@
                         <outlet property="collectionView" destination="B3U-qG-MkS" id="ZOQ-fY-9aH"/>
                         <outlet property="deletePicturesButton" destination="bG5-5U-r4F" id="pAc-EQ-qJG"/>
                         <outlet property="mapView" destination="Mvl-EH-L1D" id="vNm-AO-2t5"/>
+                        <outlet property="mySpinner" destination="kf5-9g-SiY" id="Ou1-am-pFH"/>
                         <outlet property="newCollectionButton" destination="EDn-cl-RYd" id="3Qw-Wr-at6"/>
                     </connections>
                 </viewController>
