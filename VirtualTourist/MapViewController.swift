@@ -35,7 +35,7 @@ class MapViewController: UIViewController {
         
         //enable long press to drop a pin
         let uilgr = UILongPressGestureRecognizer(target: self, action: #selector(MapViewController.addAnnotation(_:)))
-        uilgr.minimumPressDuration = 1.3
+        uilgr.minimumPressDuration = 0.8
         mapView.addGestureRecognizer(uilgr)
         
         mySpinner.startAnimating()
@@ -145,25 +145,30 @@ class MapViewController: UIViewController {
     //MARK: -Drop A Pin Functions
     func addAnnotation(gestureRecognizer:UIGestureRecognizer){
         if editingMap == false {
-            let touchPoint = gestureRecognizer.locationInView(mapView)
-            let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
-            latitude = Double(newCoordinates.latitude)
-            longitude = Double(newCoordinates.longitude)
-            print("Longitude: ", longitude, ", Latitude: ", latitude)
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = newCoordinates
-            mapView.addAnnotation(annotation)
-            
-            //CORE DATA
-            var dictionary = [String : AnyObject]()
-            
-            dictionary[Location.Keys.Latitude] = latitude
-            dictionary[Location.Keys.Longitude] = longitude
-            
-            let locationToBeAdded = Location(dictionary: dictionary, context: sharedContext)
-            
-            self.locations.append(locationToBeAdded)
-            CoreDataStackManager.sharedInstance().saveContext()
+            switch gestureRecognizer.state {
+            case .Ended:
+                    let touchPoint = gestureRecognizer.locationInView(mapView)
+                    let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
+                    latitude = Double(newCoordinates.latitude)
+                    longitude = Double(newCoordinates.longitude)
+                    print("Longitude: ", longitude, ", Latitude: ", latitude)
+                    let annotation = MKPointAnnotation()
+                    annotation.coordinate = newCoordinates
+                    mapView.addAnnotation(annotation)
+                    
+                    //CORE DATA
+                    var dictionary = [String : AnyObject]()
+                    
+                    dictionary[Location.Keys.Latitude] = latitude
+                    dictionary[Location.Keys.Longitude] = longitude
+                    
+                    let locationToBeAdded = Location(dictionary: dictionary, context: sharedContext)
+                    
+                    self.locations.append(locationToBeAdded)
+                    CoreDataStackManager.sharedInstance().saveContext()
+            default:
+                break
+            }
         }
     }
 }

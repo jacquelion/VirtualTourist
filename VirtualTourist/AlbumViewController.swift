@@ -119,7 +119,7 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         let fetchRequest = NSFetchRequest(entityName: "Picture")
         
         fetchRequest.sortDescriptors = [NSSortDescriptor(key:"id", ascending: true)]
-       // fetchRequest.predicate = NSPredicate(format: "location == %a", self.location)
+        fetchRequest.predicate = NSPredicate(format: "location == %@", self.location)
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
                                                                   managedObjectContext: self.sharedContext,
@@ -189,6 +189,8 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         
         for picture in picturesToDelete {
             sharedContext.deleteObject(picture)
+            picture.pictureImage = nil
+
         }
         
         selectedIndexes = [NSIndexPath]()
@@ -198,7 +200,6 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         
         //reload data
         CoreDataStackManager.sharedInstance().saveContext()
-        //loadPictures()
     }
     
     @IBAction func getNewCollection(sender: AnyObject) {

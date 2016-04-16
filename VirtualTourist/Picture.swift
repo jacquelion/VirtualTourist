@@ -31,8 +31,6 @@ class Picture : NSManagedObject {
     }
     
     override func prepareForDeletion() {
-        super.prepareForDeletion()
-        
         if let path = path {
             if (NSFileManager.defaultManager().fileExistsAtPath(path)) {
                 do
