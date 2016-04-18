@@ -146,16 +146,18 @@ class MapViewController: UIViewController {
     func addAnnotation(gestureRecognizer:UIGestureRecognizer){
         if editingMap == false {
             switch gestureRecognizer.state {
+            case .Began:
+                let touchPoint = gestureRecognizer.locationInView(mapView)
+                let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
+                latitude = Double(newCoordinates.latitude)
+                longitude = Double(newCoordinates.longitude)
+                print("Longitude: ", longitude, ", Latitude: ", latitude)
+                let annotation = MKPointAnnotation()
+                annotation.coordinate = newCoordinates
+                mapView.addAnnotation(annotation)
+
             case .Ended:
-                    let touchPoint = gestureRecognizer.locationInView(mapView)
-                    let newCoordinates = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
-                    latitude = Double(newCoordinates.latitude)
-                    longitude = Double(newCoordinates.longitude)
-                    print("Longitude: ", longitude, ", Latitude: ", latitude)
-                    let annotation = MKPointAnnotation()
-                    annotation.coordinate = newCoordinates
-                    mapView.addAnnotation(annotation)
-                    
+                
                     //CORE DATA
                     var dictionary = [String : AnyObject]()
                     

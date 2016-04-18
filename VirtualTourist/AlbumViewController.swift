@@ -51,7 +51,11 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         } catch{}
         
         loadMapView()
+        if let documentsPath = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first?.path {
+            print("DOCUMENTS PATH: ", documentsPath) // "var/folder/.../documents\n" copy the full path
+        }
     }
+    
     
     // Layout the collection view
     
