@@ -193,8 +193,6 @@ class AlbumViewController : UIViewController, UICollectionViewDataSource, UIColl
         
         for picture in picturesToDelete {
             sharedContext.deleteObject(picture)
-            picture.pictureImage = nil
-
         }
         
         selectedIndexes = [NSIndexPath]()

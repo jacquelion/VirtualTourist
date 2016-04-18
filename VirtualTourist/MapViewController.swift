@@ -40,11 +40,13 @@ class MapViewController: UIViewController {
         
         mySpinner.startAnimating()
         view.alpha = 0.5
+        
+        //Core Data: get all previously placed pins
+        loadMapAnnotations()
     }
     
     override func viewWillAppear(animated: Bool) {
-        //Core Data: get all previously placed pins
-        loadMapAnnotations()
+        
     }
     
     func loadMapAnnotations(){
