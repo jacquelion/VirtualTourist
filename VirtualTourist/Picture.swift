@@ -31,13 +31,15 @@ class Picture : NSManagedObject {
     }
     
     override func prepareForDeletion() {
+        pictureImage = nil
         if let path = path {
             if (NSFileManager.defaultManager().fileExistsAtPath(path)) {
                 do
                 {
                     //try NSFileManager.defaultManager().removeItemAtPath(path)
                     //When the image is set to nil, this clears the documents directory, allowing new pictures to be saved on a refresh.
-                    Flickr.Caches.imageCache.storeImage(nil, withIdentifier: path)
+                   // pictureImage = nil
+                    Flickr.Caches.imageCache.storeImage(pictureImage, withIdentifier: path)
                 }
                 catch
                 {
